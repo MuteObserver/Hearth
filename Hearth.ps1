@@ -232,6 +232,8 @@ try {
 
     # Execute Hearth tasks
     Execute-Hearth
+    Write-Host "Script finished executing"
+    Read-Host "Press Enter to continue..."
 }
 catch {
     Write-Error "An unexpected error occurred: $_"
