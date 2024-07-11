@@ -3,7 +3,7 @@
 
 <#
 .SYNOPSIS
-    Hearth - A comprehensive, self-upgrading PowerShell-based system maintenance utility for Windows environments.
+    Hearth - A comprehensive system maintenance utility for Windows.
 .DESCRIPTION
     Automates common system maintenance tasks including package updates,
     system cleanup, security checks, and Windows updates. Handles first-time
@@ -14,7 +14,7 @@
     Version        : 1.0.0
 #>
 
-# ASCII Art for Hearth Welcome Message
+# ASCII Art Logo
 $logo = @'
     /\                      ╔══════════════════════════════════╗
    /  \                     ║        Welcome to Hearth         ║
@@ -22,8 +22,8 @@ $logo = @'
  /|    |\     _____         ║ Automated System Maintenance     ║
 /_|____| \   (     )        ║        for Windows               ║
   |    |     \   /          ║                                  ║
-  |  []|      \ /           ║ Version: 1.0                     ║
-  |____|_______V______      ║ Author: Liam Weise               ║
+  |  []|      \ /           ║ Version: 1.0.0                   ║
+  |____|_______V______      ║ Author: Kaleb Weise              ║
   |    |  _    |      |     ║ © 2024 Hearth Solutions          ║
   |    | (_)   |  []  |     ║                                  ║
   |____|______ |______|     ║ "Keeping your system warm        ║
@@ -35,28 +35,24 @@ $logo = @'
       ^ ^ ^ ^ ^
 '@
 
-# Paths and Constants
+# Paths and Variables
 $hearthDirectory = "$env:LOCALAPPDATA\Hearth"
-$configDirectory = "$hearthDirectory\Config"
-$configFile = "$configDirectory\HearthSettings.json"
-$schemaFile = "$configDirectory\HearthSettings.schema.json"
-$modulesPath = "$PSScriptRoot\Modules"
+$configDirectory = Join-Path -Path $hearthDirectory -ChildPath "Config"
+$configFile = Join-Path -Path $configDirectory -ChildPath "HearthSettings.json"
+$schemaFile = Join-Path -Path $configDirectory -ChildPath "HearthSettings.schema.json"
+$modulesDirectory = Join-Path -Path $PSScriptRoot -ChildPath "Modules"
 
 # Function to initialize directories and configuration files
 function Initialize-Hearth {
-    $ErrorActionPreference = 'Stop'
-    $ProgressPreference = 'SilentlyContinue'
-
     try {
         # Create directories if they don't exist
         if (-not (Test-Path -Path $configDirectory -PathType Container)) {
-            New-Item -Path $configDirectory -ItemType Directory -Force | Out-Null
-            Write-Output "Directories initialized successfully."
+            $null = New-Item -Path $configDirectory -ItemType Directory -Force
+            Write-Output "Created directory: $configDirectory"
         }
 
         # Create initial configuration file if it doesn't exist
         if (-not (Test-Path -Path $configFile -PathType Leaf)) {
-            # Create initial configuration JSON content
             $initialConfig = @{
                 AutomatedUpdates = $true
                 SystemMaintenance = $true
@@ -67,13 +63,12 @@ function Initialize-Hearth {
             } | ConvertTo-Json -Depth 4
 
             $initialConfig | Set-Content -Path $configFile -Force
-            Write-Output "Initial configuration file created."
+            Write-Output "Created initial configuration file: $configFile"
         }
 
-        # Create schema file if it doesn't exist
-        if (-not (Test-Path -Path $schemaFile -PathType Leaf)) {
-            # Create schema content
-            $schemaContent = @{
+        # Create schema file if it doesn't exist or doesn't match the expected schema
+        $expectedSchema = @{
+            "$schemaContent" = @{
                 "type" = "object"
                 "properties" = @{
                     "AutomatedUpdates" = @{
@@ -105,23 +100,24 @@ function Initialize-Hearth {
                 )
                 "additionalProperties" = $false
             }
+        } | ConvertTo-Json -Depth 4
 
-            $schemaContent | ConvertTo-Json -Depth 4 | Set-Content -Path $schemaFile -Force
-            Write-Output "Schema file created."
+        $currentSchema = $null
+        if (Test-Path -Path $schemaFile -PathType Leaf) {
+            $currentSchema = Get-Content -Path $schemaFile -Raw | ConvertFrom-Json
         }
 
-        Write-Output "Hearth initialized successfully."
+        if (-not $currentSchema -or ($currentSchema | ConvertTo-Json -Depth 4) -ne ($expectedSchema | ConvertTo-Json -Depth 4)) {
+            $expectedSchema | Set-Content -Path $schemaFile -Force
+            Write-Output "Created or updated schema file: $schemaFile"
+        }
+
+        Write-Output "Directories initialized successfully."
     }
     catch {
         Write-Error "Initialization failed: $_"
         exit 1
     }
-}
-
-# Initialize Hearth if not already installed
-if (-not (Test-Path -Path $configFile -PathType Leaf)) {
-    Initialize-Hearth
-    Write-Output "Hearth has been installed successfully."
 }
 
 # Function to load configuration and validate using JSON Schema
@@ -134,35 +130,28 @@ function Load-Configuration {
         [string]$SchemaPath
     )
 
-    $config = $null
-    $schema = $null
-
     try {
         $config = Get-Content -Path $ConfigPath -Raw -ErrorAction Stop | ConvertFrom-Json
         $schema = Get-Content -Path $SchemaPath -Raw -ErrorAction Stop | ConvertFrom-Json
+
+        if ($config -isnot [object]) {
+            throw "Invalid configuration format. Expected JSON object."
+        }
+
+        # Perform validation against schema
+        $isValid = $config.PSObject.Properties.Name -eq $schema.PSObject.Properties.Name
+        if (-not $isValid) {
+            throw "Configuration does not match the schema."
+        }
+
+        Write-Output "Configuration loaded and validated successfully."
+        return $config
     }
     catch {
-        Write-Error "Failed to load configuration or schema file: $_"
+        Write-Error "Failed to load or validate configuration: $_"
         exit 1
     }
-
-    if ($config -isnot [object]) {
-        Write-Error "Invalid configuration format. Expected JSON object."
-        exit 1
-    }
-
-    # Perform validation against schema
-    $isValid = $config.PSObject.Properties.Name -eq $schema.PSObject.Properties.Name
-    if (-not $isValid) {
-        Write-Error "Configuration does not match the schema."
-        exit 1
-    }
-
-    return $config
 }
-
-# Load configuration and validate
-$config = Load-Configuration -ConfigPath $configFile -SchemaPath $schemaFile
 
 # Function to import Hearth modules
 function Import-HearthModule {
@@ -171,116 +160,77 @@ function Import-HearthModule {
         [string]$ModuleName
     )
 
-    if (Test-Path $ModuleName) {
-        try {
+    try {
+        if (Test-Path $ModuleName) {
             Import-Module $ModuleName -ErrorAction Stop
-            Write-Output "Module imported: $($ModuleName | Split-Path -Leaf)"
-        }
-        catch {
-            Write-Error "Failed to import module: $ModuleName"
-            exit 1
+            Write-Output "Module imported successfully: $ModuleName"
+        } else {
+            throw "$ModuleName module not found. Please ensure it is installed."
         }
     }
-    else {
-        Write-Error "$ModuleName module not found. Please ensure it is installed."
+    catch {
+        Write-Error "Failed to import module: $_"
         exit 1
     }
 }
 
-# List of modules to import
-$modules = @(
-    "$modulesPath\HearthInstaller\HearthInstaller.psm1",
-    "$modulesPath\Invoke-ChocolateyUpdate\Invoke-ChocolateyUpdate.psm1",
-    "$modulesPath\Invoke-ScoopUpdate\Invoke-ScoopUpdate.psm1",
-    "$modulesPath\Invoke-WingetUpdate\Invoke-WingetUpdate.psm1",
-    "$modulesPath\Invoke-SFCScan\Invoke-SFCScan.psm1",
-    "$modulesPath\Invoke-DefenderScan\Invoke-DefenderScan.psm1",
-    "$modulesPath\Invoke-DiskCleanup\Invoke-DiskCleanup.psm1"
-)
+# Function to execute Hearth tasks
+function Execute-Hearth {
+    try {
+        # Perform automated updates if enabled
+        if ($config.AutomatedUpdates) {
+            Invoke-ChocolateyUpdate
+            Invoke-ScoopUpdate
+            Invoke-WingetUpdate
+        }
 
-# Import Hearth modules
-$modules | ForEach-Object {
-    Import-HearthModule -ModuleName $_
+        # Perform system maintenance if enabled
+        if ($config.SystemMaintenance) {
+            Invoke-SFCScan
+            Invoke-DefenderScan
+            Invoke-DiskCleanup
+        }
+
+        Write-Output "Hearth tasks executed successfully."
+    }
+    catch {
+        Write-Error "Failed to execute Hearth tasks: $_"
+        exit 1
+    }
 }
 
-# Function to perform maintenance tasks
-function Start-HearthMaintenance {
-    Write-Output "Performing maintenance tasks..."
+# Main script logic
+try {
+    Clear-Host
+    Write-Output $logo
+    $null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+    Clear-Host
 
-    # Example: Perform automated updates if enabled in configuration
-    if ($config.AutomatedUpdates) {
-        Invoke-ChocolateyUpdate
-        Invoke-ScoopUpdate
-        Invoke-WingetUpdate
-    }
+    Initialize-Hearth
+    Write-Output "Hearth initialized successfully."
 
-    # Example: Perform system maintenance if enabled in configuration
-    if ($config.SystemMaintenance) {
-        Invoke-SFCScan
-        Invoke-DefenderScan
-        Invoke-DiskCleanup
-    }
+    # Load configuration and validate
+    $config = Load-Configuration -ConfigPath $configFile -SchemaPath $schemaFile
 
-    Write-Output "Maintenance tasks completed."
-}
-
-# Function to handle command-line options
-function Parse-CommandLineOptions {
-    [CmdletBinding()]
-    param (
-        [string[]]$Arguments
+    # Import Hearth modules
+    $Modules = @(
+        "$modulesDirectory\HearthInstaller\HearthInstaller.psm1",
+        "$modulesDirectory\Invoke-ChocolateyUpdate\Invoke-ChocolateyUpdate.psm1",
+        "$modulesDirectory\Invoke-ScoopUpdate\Invoke-ScoopUpdate.psm1",
+        "$modulesDirectory\Invoke-WingetUpdate\Invoke-WingetUpdate.psm1",
+        "$modulesDirectory\Invoke-SFCScan\Invoke-SFCScan.psm1",
+        "$modulesDirectory\Invoke-DefenderScan\Invoke-DefenderScan.psm1",
+        "$modulesDirectory\Invoke-DiskCleanup\Invoke-DiskCleanup.psm1"
     )
 
-    $options = @{
-        ResetConfig = $false
-        IgnoreNever = $false
-        ForceAll = $false
-        DryRun = $false
-        Uninstall = $false
+    $Modules | ForEach-Object {
+        Import-HearthModule -ModuleName $_
     }
 
-    $optionFlags = @("-ResetConfig", "-IgnoreNever", "-ForceAll", "-DryRun", "-Uninstall")
-
-    foreach ($arg in $Arguments) {
-        if ($arg -in $optionFlags) {
-            $options[$arg.TrimStart('-')] = $true
-        }
-    }
-
-    return $options
+    # Execute Hearth tasks
+    Execute-Hearth
 }
-
-# Entry point
-Clear-Host
-Write-Output $logo
-$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
-Clear-Host
-
-# Check if installation is needed and perform initial setup
-if (-not (Test-Path -Path $configFile -PathType Leaf)) {
-    Initialize-Hearth
-    Write-Output "Hearth has been installed successfully."
+catch {
+    Write-Error "An unexpected error occurred: $_"
+    exit 1
 }
-else {
-    Write-Output "Hearth is already installed."
-}
-
-# Parse command-line options
-$options = Parse-CommandLineOptions -Arguments $args
-
-# Handle command-line options
-if ($options['Uninstall']) {
-    Write-Output "Uninstalling Hearth..."
-    # Perform uninstallation tasks here if needed
-    Write-Output "Hearth has been uninstalled."
-}
-elseif ($options['ResetConfig']) {
-    Write-Output "Resetting Hearth configuration..."
-    # Perform configuration reset tasks here if needed
-    Write-Output "Hearth configuration has been reset."
-}
-else {
-    # Normal execution flow
-    Start-HearthMaintenance
-}
-
