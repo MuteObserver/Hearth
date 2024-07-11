@@ -24,10 +24,10 @@ $logo = @'
   |    |     \   /          ║                                  ║
   |  []|      \ /           ║ Version: 1.0.0                   ║
   |____|_______V______      ║ Author: Kaleb Weise              ║
-  |    |  _    |      |     ║ © 2024 Hearth Solutions          ║
+  |    |  _    |      |     ║                                  ║
   |    | (_)   |  []  |     ║                                  ║
   |____|______ |______|     ║ "Keeping your system warm        ║
-     /|\    /|\             ║     and running smoothly."       ║
+     /|\    /|\             ║     and well-kindled!"           ║
     / | \  / | \            ║                                  ║
    /  |  \/  |  \           ║ Press any key to begin...        ║
   /___|_______|___\         ╚══════════════════════════════════╝
