@@ -23,11 +23,11 @@ $logo = @'
 /_|____| \   (     )        ║        for Windows               ║
   |    |     \   /          ║                                  ║
   |  []|      \ /           ║ Version: 1.0.0                   ║
-  |____|_______V______      ║ Author: Kaleb Weise              ║
-  |    |  _    |      |     ║                                  ║
+  |____|_______V______      ║ Author: Kaleb Weise (A *Mute Observer)║
+  |    |  _    |      |     ║ © 2024 Hearth Solutions          ║
   |    | (_)   |  []  |     ║                                  ║
   |____|______ |______|     ║ "Keeping your system warm        ║
-     /|\    /|\             ║            and kindled!"         ║
+     /|\    /|\             ║     and running smoothly."       ║
     / | \  / | \            ║                                  ║
    /  |  \/  |  \           ║ Press any key to begin...        ║
   /___|_______|___\         ╚══════════════════════════════════╝
@@ -35,8 +35,10 @@ $logo = @'
       ^ ^ ^ ^ ^
 '@
 
+# Determine script directory
+$scriptDirectory = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Path $MyInvocation.MyCommand.Path -Parent }
+
 # Paths and Variables
-$scriptDirectory = Split-Path -Path $MyInvocation.MyCommand.Path
 $hearthDirectory = Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Hearth'
 $configDirectory = Join-Path -Path $hearthDirectory -ChildPath 'Config'
 $configFile = Join-Path -Path $configDirectory -ChildPath 'HearthSettings.json'
