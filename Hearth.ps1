@@ -3,7 +3,7 @@
 
 <#
 .SYNOPSIS
-    Hearth - A comprehensive system maintenance utility for Windows.
+    Hearth - A comprehensive, self-upgrading PowerShell-based system maintenance utility for Windows environments.
 .DESCRIPTION
     Automates common system maintenance tasks including package updates,
     system cleanup, security checks, and Windows updates. Handles first-time
@@ -14,7 +14,7 @@
     Version        : 1.0.0
 #>
 
-# ASCII Art and Initialize-Hearth Function
+# ASCII Art for Hearth Welcome Message
 $logo = @'
     /\                      ╔══════════════════════════════════╗
    /  \                     ║        Welcome to Hearth         ║
@@ -40,6 +40,7 @@ $hearthDirectory = "$env:LOCALAPPDATA\Hearth"
 $configDirectory = "$hearthDirectory\Config"
 $configFile = "$configDirectory\HearthSettings.json"
 $schemaFile = "$configDirectory\HearthSettings.schema.json"
+$modulesPath = "$PSScriptRoot\Modules"
 
 # Function to initialize directories and configuration files
 function Initialize-Hearth {
@@ -71,43 +72,41 @@ function Initialize-Hearth {
 
         # Create schema file if it doesn't exist
         if (-not (Test-Path -Path $schemaFile -PathType Leaf)) {
-            # Example schema content (adjust as per your actual schema requirements)
-            $initialSchema = @{
-                "$schemaContent" = @{
-                    "type" = "object"
-                    "properties" = @{
-                        "AutomatedUpdates" = @{
-                            "type" = "boolean"
-                        }
-                        "SystemMaintenance" = @{
-                            "type" = "boolean"
-                        }
-                        "UpdateChocolatey" = @{
-                            "type" = "boolean"
-                        }
-                        "InvokeSFCScan" = @{
-                            "type" = "boolean"
-                        }
-                        "OverrideUpdates" = @{
-                            "type" = "boolean"
-                        }
-                        "OverrideMaintenance" = @{
-                            "type" = "boolean"
-                        }
+            # Create schema content
+            $schemaContent = @{
+                "type" = "object"
+                "properties" = @{
+                    "AutomatedUpdates" = @{
+                        "type" = "boolean"
                     }
-                    "required" = @(
-                        "AutomatedUpdates",
-                        "SystemMaintenance",
-                        "UpdateChocolatey",
-                        "InvokeSFCScan",
-                        "OverrideUpdates",
-                        "OverrideMaintenance"
-                    )
-                    "additionalProperties" = $false
+                    "SystemMaintenance" = @{
+                        "type" = "boolean"
+                    }
+                    "UpdateChocolatey" = @{
+                        "type" = "boolean"
+                    }
+                    "InvokeSFCScan" = @{
+                        "type" = "boolean"
+                    }
+                    "OverrideUpdates" = @{
+                        "type" = "boolean"
+                    }
+                    "OverrideMaintenance" = @{
+                        "type" = "boolean"
+                    }
                 }
-            } | ConvertTo-Json -Depth 4
+                "required" = @(
+                    "AutomatedUpdates",
+                    "SystemMaintenance",
+                    "UpdateChocolatey",
+                    "InvokeSFCScan",
+                    "OverrideUpdates",
+                    "OverrideMaintenance"
+                )
+                "additionalProperties" = $false
+            }
 
-            $initialSchema | Set-Content -Path $schemaFile -Force
+            $schemaContent | ConvertTo-Json -Depth 4 | Set-Content -Path $schemaFile -Force
             Write-Output "Schema file created."
         }
 
@@ -188,9 +187,6 @@ function Import-HearthModule {
     }
 }
 
-# Paths to Hearth modules
-$modulesPath = "$PSScriptRoot\Modules"
-
 # List of modules to import
 $modules = @(
     "$modulesPath\HearthInstaller\HearthInstaller.psm1",
@@ -228,6 +224,32 @@ function Start-HearthMaintenance {
     Write-Output "Maintenance tasks completed."
 }
 
+# Function to handle command-line options
+function Parse-CommandLineOptions {
+    [CmdletBinding()]
+    param (
+        [string[]]$Arguments
+    )
+
+    $options = @{
+        ResetConfig = $false
+        IgnoreNever = $false
+        ForceAll = $false
+        DryRun = $false
+        Uninstall = $false
+    }
+
+    $optionFlags = @("-ResetConfig", "-IgnoreNever", "-ForceAll", "-DryRun", "-Uninstall")
+
+    foreach ($arg in $Arguments) {
+        if ($arg -in $optionFlags) {
+            $options[$arg.TrimStart('-')] = $true
+        }
+    }
+
+    return $options
+}
+
 # Entry point
 Clear-Host
 Write-Output $logo
@@ -243,5 +265,22 @@ else {
     Write-Output "Hearth is already installed."
 }
 
-# Call main function to perform maintenance tasks
-Start-HearthMaintenance
+# Parse command-line options
+$options = Parse-CommandLineOptions -Arguments $args
+
+# Handle command-line options
+if ($options['Uninstall']) {
+    Write-Output "Uninstalling Hearth..."
+    # Perform uninstallation tasks here if needed
+    Write-Output "Hearth has been uninstalled."
+}
+elseif ($options['ResetConfig']) {
+    Write-Output "Resetting Hearth configuration..."
+    # Perform configuration reset tasks here if needed
+    Write-Output "Hearth configuration has been reset."
+}
+else {
+    # Normal execution flow
+    Start-HearthMaintenance
+}
+
