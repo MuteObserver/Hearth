@@ -23,10 +23,10 @@ $logo = @'
 /_|____| \   (     )        ║        for Windows               ║
   |    |     \   /          ║                                  ║
   |  []|      \ /           ║ Version: 1.0.0                   ║
-  |____|_______V______      ║ Author: Kaleb Weise (A *Mute Observer)║
-  |    |  _    |      |     ║ © 2024 Hearth Solutions          ║
+  |____|_______V______      ║ Author: Kaleb Weise              ║
+  |    |  _    |      |     ║      (A *Mute Observer)          ║
   |    | (_)   |  []  |     ║                                  ║
-  |____|______ |______|     ║ "Keeping your system warm        ║
+  |____|______ |______|     ║ "Keeping your system kindled     ║
      /|\    /|\             ║     and running smoothly."       ║
     / | \  / | \            ║                                  ║
    /  |  \/  |  \           ║ Press any key to begin...        ║
