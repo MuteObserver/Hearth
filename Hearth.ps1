@@ -119,6 +119,7 @@ function Initialize-Hearth {
     }
     catch {
         Write-Error "Initialization failed: $_"
+        Start-Sleep -s 10
         exit 1
     }
 }
