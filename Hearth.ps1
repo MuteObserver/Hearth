@@ -24,10 +24,10 @@ $logo = @'
   |    |     \   /          ║                                  ║
   |  []|      \ /           ║ Version: 1.0.0                   ║
   |____|_______V______      ║ Author: Kaleb Weise              ║
-  |    |  _    |      |     ║                                  ║
+  |    |  _    |      |     ║ © 2024 Hearth Solutions          ║
   |    | (_)   |  []  |     ║                                  ║
   |____|______ |______|     ║ "Keeping your system warm        ║
-     /|\    /|\             ║     and well-kindled!"           ║
+     /|\    /|\             ║     and running smoothly."       ║
     / | \  / | \            ║                                  ║
    /  |  \/  |  \           ║ Press any key to begin...        ║
   /___|_______|___\         ╚══════════════════════════════════╝
@@ -36,11 +36,12 @@ $logo = @'
 '@
 
 # Paths and Variables
-$hearthDirectory = "$env:LOCALAPPDATA\Hearth"
-$configDirectory = Join-Path -Path $hearthDirectory -ChildPath "Config"
-$configFile = Join-Path -Path $configDirectory -ChildPath "HearthSettings.json"
-$schemaFile = Join-Path -Path $configDirectory -ChildPath "HearthSettings.schema.json"
-$modulesDirectory = Join-Path -Path $PSScriptRoot -ChildPath "Modules"
+$scriptDirectory = Split-Path -Path $MyInvocation.MyCommand.Path
+$hearthDirectory = Join-Path -Path $env:LOCALAPPDATA -ChildPath 'Hearth'
+$configDirectory = Join-Path -Path $hearthDirectory -ChildPath 'Config'
+$configFile = Join-Path -Path $configDirectory -ChildPath 'HearthSettings.json'
+$schemaFile = Join-Path -Path $configDirectory -ChildPath 'HearthSettings.schema.json'
+$modulesDirectory = Join-Path -Path $scriptDirectory -ChildPath 'Modules'
 
 # Function to initialize directories and configuration files
 function Initialize-Hearth {
